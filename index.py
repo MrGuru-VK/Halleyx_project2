@@ -26,28 +26,6 @@ INDEX_TEMPLATE='''<!DOCTYPE html>
         </header>
 
         <main class="workspace-grid">
-            <section class="hero-panel">
-                <div class="hero-copy">
-                    <span class="eyebrow">Live operations</span>
-                    <h2>Make the workspace larger, clearer, and easier to act on.</h2>
-                    <p>Drag widgets, filter time windows, and review order activity without feeling boxed into a narrow layout.</p>
-                </div>
-                <div class="hero-stats">
-                    <div class="mini-stat">
-                        <span>Canvas</span>
-                        <strong>Full-width grid</strong>
-                    </div>
-                    <div class="mini-stat">
-                        <span>Orders</span>
-                        <strong>Scrollable table</strong>
-                    </div>
-                    <div class="mini-stat">
-                        <span>Theme</span>
-                        <strong>Modern glass UI</strong>
-                    </div>
-                </div>
-            </section>
-
             <section id="dashboardView" class="panel workspace-panel">
                 <div class="section-heading">
                     <div>
