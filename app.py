@@ -5,8 +5,15 @@ import json
 import os
 import uuid
 import re
+import time
+import hmac
+import hashlib
+import struct
+import base64
+import secrets
+from urllib.parse import quote
 
-from index import INDEX_TEMPLATE, LOGIN_TEMPLATE
+from index import INDEX_TEMPLATE, LOGIN_TEMPLATE, AUTHENTICATOR_TEMPLATE
 from styles import css_content
 
 app = Flask(__name__)
@@ -46,7 +53,8 @@ def get_users():
         users = [{
             'username': SAMPLE_USERNAME,
             'password': SAMPLE_PASSWORD,
-            'display_name': 'Administrator'
+            'display_name': 'Administrator',
+            'authenticator_secret': generate_authenticator_secret()
         }]
         save_data(USERS_FILE, users)
     return users
@@ -54,6 +62,26 @@ def get_users():
 
 def find_user(username):
     return next((user for user in get_users() if user['username'].lower() == username.lower()), None)
+
+
+def save_users(users):
+    save_data(USERS_FILE, users)
+
+
+def ensure_user_authenticator(username):
+    users = get_users()
+    updated = False
+    user_secret = None
+    for user in users:
+        if user['username'].lower() == username.lower():
+            if not user.get('authenticator_secret'):
+                user['authenticator_secret'] = generate_authenticator_secret()
+                updated = True
+            user_secret = user['authenticator_secret']
+            break
+    if updated:
+        save_users(users)
+    return user_secret
 
 
 def get_user_paths(username):
@@ -96,6 +124,48 @@ def current_user_paths():
         raise RuntimeError('No logged in user in session.')
     return ensure_user_storage(username)
 
+
+def generate_authenticator_secret():
+    return base64.b32encode(secrets.token_bytes(10)).decode('utf-8').rstrip('=')
+
+
+def generate_totp_code(secret, interval=30, digits=6):
+    padded_secret = secret + ('=' * ((8 - len(secret) % 8) % 8))
+    key = base64.b32decode(padded_secret, casefold=True)
+    counter = int(time.time() // interval)
+    msg = struct.pack('>Q', counter)
+    digest = hmac.new(key, msg, hashlib.sha1).digest()
+    offset = digest[-1] & 0x0F
+    code_int = struct.unpack('>I', digest[offset:offset + 4])[0] & 0x7FFFFFFF
+    return str(code_int % (10 ** digits)).zfill(digits)
+
+
+def verify_totp_code(secret, code, interval=30, digits=6, allowed_drift=1):
+    normalized_code = str(code or '').strip()
+    if not (normalized_code.isdigit() and len(normalized_code) == digits):
+        return False
+
+    padded_secret = secret + ('=' * ((8 - len(secret) % 8) % 8))
+    key = base64.b32decode(padded_secret, casefold=True)
+    current_counter = int(time.time() // interval)
+
+    for drift in range(-allowed_drift, allowed_drift + 1):
+        counter = current_counter + drift
+        msg = struct.pack('>Q', counter)
+        digest = hmac.new(key, msg, hashlib.sha1).digest()
+        offset = digest[-1] & 0x0F
+        code_int = struct.unpack('>I', digest[offset:offset + 4])[0] & 0x7FFFFFFF
+        expected = str(code_int % (10 ** digits)).zfill(digits)
+        if hmac.compare_digest(expected, normalized_code):
+            return True
+    return False
+
+
+def build_otpauth_uri(username, secret, issuer='Halleyx Dashboard'):
+    label = quote(f'{issuer}:{username}')
+    issuer_param = quote(issuer)
+    return f'otpauth://totp/{label}?secret={secret}&issuer={issuer_param}&algorithm=SHA1&digits=6&period=30'
+
 def login_required(view_func):
     @wraps(view_func)
     def wrapped_view(*args, **kwargs):
@@ -130,6 +200,82 @@ def login():
         'ok': False,
         'message': 'Invalid credentials. Try admin / admin123.'
     }), 401
+
+
+@app.route('/authenticator', methods=['GET'])
+def authenticator_page():
+    return Response(AUTHENTICATOR_TEMPLATE, mimetype='text/html')
+
+
+@app.route('/authenticator/setup', methods=['POST'])
+def authenticator_setup():
+    data = request.get_json(silent=True) or {}
+    username = (data.get('username') or '').strip()
+    user = find_user(username)
+
+    if not user:
+        return jsonify({'ok': False, 'message': 'User not found.'}), 404
+
+    secret = ensure_user_authenticator(user['username'])
+    return jsonify({
+        'ok': True,
+        'username': user['username'],
+        'secret': secret,
+        'otpauth_uri': build_otpauth_uri(user['username'], secret),
+        'message': 'Add this account in Google Authenticator, then enter the 6-digit code.'
+    })
+
+
+@app.route('/authenticator/verify', methods=['POST'])
+def authenticator_verify():
+    data = request.get_json(silent=True) or {}
+    username = (data.get('username') or '').strip()
+    code = (data.get('code') or '').strip()
+    user = find_user(username)
+
+    if not user:
+        return jsonify({'ok': False, 'message': 'User not found.'}), 404
+
+    secret = ensure_user_authenticator(user['username'])
+    if not verify_totp_code(secret, code):
+        return jsonify({'ok': False, 'message': 'Invalid authenticator code.'}), 401
+
+    session['password_reset_verified_for'] = user['username']
+    return jsonify({
+        'ok': True,
+        'message': 'Code verified. You can reset the password now.'
+    })
+
+
+@app.route('/authenticator/reset-password', methods=['POST'])
+def authenticator_reset_password():
+    data = request.get_json(silent=True) or {}
+    username = (data.get('username') or '').strip()
+    new_password = data.get('newPassword') or ''
+
+    if session.get('password_reset_verified_for') != username:
+        return jsonify({'ok': False, 'message': 'Verify the authenticator code first.'}), 403
+
+    if len(new_password) < 4:
+        return jsonify({'ok': False, 'message': 'Password must be at least 4 characters.'}), 400
+
+    users = get_users()
+    updated = False
+    for user in users:
+        if user['username'].lower() == username.lower():
+            user['password'] = new_password
+            updated = True
+            break
+
+    if not updated:
+        return jsonify({'ok': False, 'message': 'User not found.'}), 404
+
+    save_users(users)
+    session.pop('password_reset_verified_for', None)
+    return jsonify({
+        'ok': True,
+        'message': 'Password updated successfully. Return to login and sign in.'
+    })
 
 
 @app.route('/register', methods=['POST'])

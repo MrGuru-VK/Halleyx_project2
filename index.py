@@ -280,6 +280,7 @@ LOGIN_TEMPLATE='''<!DOCTYPE html>
                     <input type="password" name="password" placeholder="Enter password" value="admin123" required>
                 </label>
                 <button type="submit">Login to Workspace</button>
+                <button id="forgotPasswordBtn" class="ghost-btn" type="button">Forgot Password</button>
                 <p id="loginMessage" class="login-message" aria-live="polite"></p>
             </form>
             <button id="toggleSignupBtn" class="secondary-btn auth-toggle" type="button">Create New User</button>
@@ -307,10 +308,17 @@ LOGIN_TEMPLATE='''<!DOCTYPE html>
         const signupForm = document.getElementById('signupForm');
         const signupMessage = document.getElementById('signupMessage');
         const toggleSignupBtn = document.getElementById('toggleSignupBtn');
+        const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
 
         toggleSignupBtn.addEventListener('click', function() {
             signupForm.classList.toggle('hidden');
             toggleSignupBtn.textContent = signupForm.classList.contains('hidden') ? 'Create New User' : 'Hide Create User';
+        });
+
+        forgotPasswordBtn.addEventListener('click', function() {
+            const username = loginForm.elements.username.value || '';
+            const query = username ? `?username=${encodeURIComponent(username)}` : '';
+            window.location.href = `/authenticator${query}`;
         });
 
         loginForm.addEventListener('submit', async function(event) {
@@ -372,6 +380,163 @@ LOGIN_TEMPLATE='''<!DOCTYPE html>
                 signupForm.reset();
             } catch (error) {
                 signupMessage.textContent = 'Unable to create the user right now.';
+            }
+        });
+    </script>
+</body>
+</html>'''
+
+AUTHENTICATOR_TEMPLATE='''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authenticator - Halleyx Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="login-shell">
+    <div class="page-glow page-glow-one"></div>
+    <div class="page-glow page-glow-two"></div>
+    <main class="login-layout">
+        <section class="login-intro">
+            <span class="eyebrow">Authenticator</span>
+            <h1>Verify with Google Authenticator.</h1>
+            <p>Enter the username, connect the account to Google Authenticator using the generated setup key, then verify the 6-digit code before resetting the password.</p>
+        </section>
+        <section class="login-card">
+            <div class="login-card-header">
+                <span class="eyebrow">Recovery access</span>
+                <h2>Authenticator Verification</h2>
+                <p>This flow is compatible with Google Authenticator using a standard TOTP secret.</p>
+            </div>
+            <form id="authenticatorForm" class="login-form">
+                <label>
+                    <span>Username</span>
+                    <input type="text" name="username" id="authenticatorUsername" placeholder="Enter username" required>
+                </label>
+                <button type="submit">Get Google Authenticator Setup</button>
+                <div class="auth-code-panel hidden" id="authCodePanel">
+                    <p><strong>Setup key:</strong> <span id="authSecret"></span></p>
+                    <p><strong>Authenticator link:</strong> <a id="authLink" class="text-link" href="#" target="_blank" rel="noopener noreferrer">Open in Authenticator</a></p>
+                    <p>In Google Authenticator, choose "Enter a setup key", paste the secret, then generate the 6-digit code.</p>
+                </div>
+                <label class="hidden" id="verificationWrap">
+                    <span>Authenticator Code</span>
+                    <input type="text" name="code" id="authenticatorCode" placeholder="Enter 6-digit code" inputmode="numeric" maxlength="6">
+                </label>
+                <button id="verifyCodeBtn" class="hidden" type="button">Verify Code</button>
+                <label class="hidden" id="resetPasswordWrap">
+                    <span>New Password</span>
+                    <input type="password" id="newPassword" placeholder="Enter new password">
+                </label>
+                <button id="resetPasswordBtn" class="hidden" type="button">Reset Password</button>
+                <p id="authenticatorMessage" class="login-message" aria-live="polite"></p>
+                <a class="text-link" href="/">Back to Login</a>
+            </form>
+        </section>
+    </main>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const authenticatorForm = document.getElementById('authenticatorForm');
+        const authenticatorUsername = document.getElementById('authenticatorUsername');
+        const authenticatorMessage = document.getElementById('authenticatorMessage');
+        const authCodePanel = document.getElementById('authCodePanel');
+        const authSecret = document.getElementById('authSecret');
+        const authLink = document.getElementById('authLink');
+        const verificationWrap = document.getElementById('verificationWrap');
+        const authenticatorCode = document.getElementById('authenticatorCode');
+        const verifyCodeBtn = document.getElementById('verifyCodeBtn');
+        const resetPasswordWrap = document.getElementById('resetPasswordWrap');
+        const newPassword = document.getElementById('newPassword');
+        const resetPasswordBtn = document.getElementById('resetPasswordBtn');
+
+        authenticatorUsername.value = params.get('username') || '';
+
+        authenticatorForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            authenticatorMessage.textContent = 'Preparing Google Authenticator setup...';
+            authCodePanel.classList.add('hidden');
+            verificationWrap.classList.add('hidden');
+            verifyCodeBtn.classList.add('hidden');
+            resetPasswordWrap.classList.add('hidden');
+            resetPasswordBtn.classList.add('hidden');
+
+            try {
+                const response = await fetch('/authenticator/setup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: authenticatorUsername.value })
+                });
+                const result = await response.json();
+
+                if (!response.ok) {
+                    authenticatorMessage.textContent = result.message || 'Unable to generate code.';
+                    return;
+                }
+
+                authSecret.textContent = result.secret;
+                authLink.href = result.otpauth_uri;
+                authCodePanel.classList.remove('hidden');
+                verificationWrap.classList.remove('hidden');
+                verifyCodeBtn.classList.remove('hidden');
+                authenticatorMessage.textContent = result.message;
+            } catch (error) {
+                authenticatorMessage.textContent = 'Unable to reach the authenticator service.';
+            }
+        });
+
+        verifyCodeBtn.addEventListener('click', async function() {
+            authenticatorMessage.textContent = 'Verifying code...';
+
+            try {
+                const response = await fetch('/authenticator/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: authenticatorUsername.value,
+                        code: authenticatorCode.value
+                    })
+                });
+                const result = await response.json();
+
+                if (!response.ok) {
+                    authenticatorMessage.textContent = result.message || 'Verification failed.';
+                    return;
+                }
+
+                resetPasswordWrap.classList.remove('hidden');
+                resetPasswordBtn.classList.remove('hidden');
+                authenticatorMessage.textContent = result.message;
+            } catch (error) {
+                authenticatorMessage.textContent = 'Unable to verify the authenticator code.';
+            }
+        });
+
+        resetPasswordBtn.addEventListener('click', async function() {
+            authenticatorMessage.textContent = 'Updating password...';
+
+            try {
+                const response = await fetch('/authenticator/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: authenticatorUsername.value,
+                        newPassword: newPassword.value
+                    })
+                });
+                const result = await response.json();
+
+                if (!response.ok) {
+                    authenticatorMessage.textContent = result.message || 'Password reset failed.';
+                    return;
+                }
+
+                authenticatorMessage.textContent = result.message;
+            } catch (error) {
+                authenticatorMessage.textContent = 'Unable to update the password.';
             }
         });
     </script>

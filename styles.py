@@ -578,6 +578,25 @@ td:last-child {
     border-top: 1px solid rgba(148, 163, 184, 0.14);
 }
 
+.auth-code-panel {
+    display: grid;
+    gap: 8px;
+    padding: 16px 18px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(125, 211, 252, 0.16);
+}
+
+.auth-code-panel p {
+    margin: 0;
+}
+
+.text-link {
+    color: #7dd3fc;
+    text-decoration: none;
+    font-weight: 600;
+}
+
 .login-message {
     min-height: 24px;
     margin: 0;

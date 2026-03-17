@@ -1,8 +1,9 @@
 [
     {
         "username": "admin",
-        "password": "admin123",
-        "display_name": "Administrator"
+        "password": "1234",
+        "display_name": "Administrator",
+        "authenticator_secret": "RJ5CE7IOERYVO4CV"
     },
     {
         "username": "guru",
