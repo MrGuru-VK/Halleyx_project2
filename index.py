@@ -268,7 +268,7 @@ LOGIN_TEMPLATE='''<!DOCTYPE html>
             <div class="login-card-header">
                 <span class="eyebrow">Secure sign in</span>
                 <h2>Welcome back</h2>
-                <p>Use the sample credentials below to test the login flow.</p>
+                <p>Use the sample credentials below to test the login flow, or create a brand new user.</p>
             </div>
             <form id="loginForm" class="login-form">
                 <label>
@@ -282,11 +282,36 @@ LOGIN_TEMPLATE='''<!DOCTYPE html>
                 <button type="submit">Login to Workspace</button>
                 <p id="loginMessage" class="login-message" aria-live="polite"></p>
             </form>
+            <button id="toggleSignupBtn" class="secondary-btn auth-toggle" type="button">Create New User</button>
+            <form id="signupForm" class="login-form signup-form hidden">
+                <label>
+                    <span>Display Name</span>
+                    <input type="text" name="displayName" placeholder="Your name" required>
+                </label>
+                <label>
+                    <span>New Username</span>
+                    <input type="text" name="username" placeholder="Choose username" required>
+                </label>
+                <label>
+                    <span>New Password</span>
+                    <input type="password" name="password" placeholder="Choose password" required>
+                </label>
+                <button type="submit">Create User</button>
+                <p id="signupMessage" class="login-message" aria-live="polite"></p>
+            </form>
         </section>
     </main>
     <script>
         const loginForm = document.getElementById('loginForm');
         const loginMessage = document.getElementById('loginMessage');
+        const signupForm = document.getElementById('signupForm');
+        const signupMessage = document.getElementById('signupMessage');
+        const toggleSignupBtn = document.getElementById('toggleSignupBtn');
+
+        toggleSignupBtn.addEventListener('click', function() {
+            signupForm.classList.toggle('hidden');
+            toggleSignupBtn.textContent = signupForm.classList.contains('hidden') ? 'Create New User' : 'Hide Create User';
+        });
 
         loginForm.addEventListener('submit', async function(event) {
             event.preventDefault();
@@ -314,6 +339,39 @@ LOGIN_TEMPLATE='''<!DOCTYPE html>
                 window.location.href = result.redirect || '/workspace';
             } catch (error) {
                 loginMessage.textContent = 'Unable to reach the server. Please try again.';
+            }
+        });
+
+        signupForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            signupMessage.textContent = 'Creating your account...';
+
+            const formData = new FormData(signupForm);
+            const payload = {
+                displayName: formData.get('displayName'),
+                username: formData.get('username'),
+                password: formData.get('password')
+            };
+
+            try {
+                const response = await fetch('/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                if (!response.ok) {
+                    signupMessage.textContent = result.message || 'Could not create the user.';
+                    return;
+                }
+
+                signupMessage.textContent = 'User created. Log in with your new username and password.';
+                loginForm.elements.username.value = payload.username;
+                loginForm.elements.password.value = payload.password;
+                signupForm.reset();
+            } catch (error) {
+                signupMessage.textContent = 'Unable to create the user right now.';
             }
         });
     </script>

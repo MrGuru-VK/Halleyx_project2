@@ -567,6 +567,17 @@ td:last-child {
     margin-top: 8px;
 }
 
+.auth-toggle {
+    width: 100%;
+    margin-top: 8px;
+}
+
+.signup-form {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(148, 163, 184, 0.14);
+}
+
 .login-message {
     min-height: 24px;
     margin: 0;
