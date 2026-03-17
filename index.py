@@ -259,9 +259,6 @@ LOGIN_TEMPLATE='''<!DOCTYPE html>
             <h1>Launch a sharper dashboard experience.</h1>
             <p>Sign in to access the upgraded workspace with a larger canvas, more polished cards, and a cleaner order-management flow.</p>
             <div class="login-example">
-                <span>Example login</span>
-                <strong>Username: admin</strong>
-                <strong>Password: admin123</strong>
             </div>
         </section>
         <section class="login-card">
@@ -277,7 +274,7 @@ LOGIN_TEMPLATE='''<!DOCTYPE html>
                 </label>
                 <label>
                     <span>Password</span>
-                    <input type="password" name="password" placeholder="Enter password" value="admin123" required>
+                    <input type="password" name="password" placeholder="Enter password" value="********" required>
                 </label>
                 <button type="submit">Login to Workspace</button>
                 <button id="forgotPasswordBtn" class="ghost-btn" type="button">Forgot Password</button>
