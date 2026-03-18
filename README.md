@@ -125,7 +125,6 @@ user_data/
         orders.json
         dashboard.json
         environment.json
-'''
 
 This approach enables quick prototyping without requiring database setup.
 
@@ -140,7 +139,6 @@ This approach enables quick prototyping without requiring database setup.
  POST    /register  Create new user 
  POST    /logout    Logout user     
 
----
 
 ## Authenticator
 
@@ -150,7 +148,6 @@ This approach enables quick prototyping without requiring database setup.
  POST    /authenticator/verify          Verify OTP code               
  POST    /authenticator/reset-password  Reset password                
 
----
 
 ## Orders
 
@@ -161,7 +158,6 @@ This approach enables quick prototyping without requiring database setup.
  PUT     /orders/{id}  Update order        
  DELETE  /orders/{id}  Delete order        
 
----
 
 ## Dashboard
 
@@ -170,7 +166,6 @@ This approach enables quick prototyping without requiring database setup.
  GET     /dashboard  Load dashboard configuration 
  POST    /dashboard  Save dashboard configuration 
 
----
 
 # Running the Project
 
