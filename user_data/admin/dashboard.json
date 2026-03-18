@@ -13,27 +13,27 @@
         },
         {
             "config": {
+                "color": "#2bff00",
+                "showLabels": true,
                 "xAxis": "Product",
-                "yAxis": "Quantity",
-                "color": "#002aff",
-                "showLabels": true
+                "yAxis": "Quantity"
             },
             "height": 5,
-            "id": 1773743001228,
-            "title": "barchart ",
-            "type": "bar",
+            "id": 1773743259207,
+            "title": "linechart",
+            "type": "line",
             "width": 6
         },
         {
-            "id": 1773743259207,
-            "type": "line",
-            "title": "linechart",
+            "id": 1773814467238,
+            "type": "bar",
+            "title": "sample",
             "width": 6,
             "height": 5,
             "config": {
                 "xAxis": "Product",
                 "yAxis": "Quantity",
-                "color": "#2bff00",
+                "color": "#ff0000",
                 "showLabels": true
             }
         }

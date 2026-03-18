@@ -1,0 +1,40 @@
+[
+    {
+        "firstName": "Guruprakash",
+        "lastName": "VK",
+        "email": "developerguru03@gmail.com",
+        "phone": "09095064152",
+        "streetAddress": "vvghhj",
+        "city": "erode",
+        "state": "Tamil Nadu",
+        "postalCode": "638111",
+        "country": "India",
+        "product": "5G Unlimited Mobile Plan",
+        "quantity": 12,
+        "unitPrice": 400,
+        "totalAmount": 4800,
+        "status": "Pending",
+        "createdBy": "Mr. Michael Harris",
+        "orderDate": "2026-03-18",
+        "id": "7059f702-95e0-46d3-8771-5487ab924e09"
+    },
+    {
+        "firstName": "SUMANBABU",
+        "lastName": "S",
+        "email": "sumanbabu368@gmail.com",
+        "phone": "08925708902",
+        "streetAddress": "625513",
+        "city": "Theni",
+        "state": "Tamil Nadu",
+        "postalCode": "625513",
+        "country": "India",
+        "product": "Business Internet 500 Mbps",
+        "quantity": 4,
+        "unitPrice": 300,
+        "totalAmount": 1200,
+        "status": "Pending",
+        "createdBy": "Ms. Olivia Carter",
+        "orderDate": "2026-03-18",
+        "id": "beeec01f-3a5c-4781-8e6e-fb38e5817c17"
+    }
+]

@@ -1,7 +1,7 @@
 [
     {
         "username": "admin",
-        "password": "1234",
+        "password": "Asura@2006",
         "display_name": "Administrator",
         "authenticator_secret": "RJ5CE7IOERYVO4CV"
     },
@@ -9,5 +9,10 @@
         "username": "guru",
         "password": "123456",
         "display_name": "Guru"
+    },
+    {
+        "username": "Guru12",
+        "password": "Guru@123",
+        "display_name": "Guruprakash v k"
     }
 ]
